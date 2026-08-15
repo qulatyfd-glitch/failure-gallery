@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>想象 · 非标准答案</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <h1 class="logo"><a href="{{ url_for('index') }}">非标准答案</a></h1>
+      <p class="tagline">这里是你的私有画布 —— 随意涂鸦、写点什么都行。</p>
+      <nav class="main-nav">
+        <a href="{{ url_for('index') }}" class="back-btn">← 返回</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container narrow">
+    <div class="imagine-toolbar">
+      <div class="tool-group">
+        <button id="tool-pen" class="tool-btn active" title="画笔">✏️ 画笔</button>
+        <button id="tool-eraser" class="tool-btn" title="橡皮">🧽 橡皮</button>
+      </div>
+      <div class="tool-group">
+        <label class="tool-color">颜色 <input type="color" id="pen-color" value="#c94f4f"></label>
+        <label class="tool-size">粗细 <input type="range" id="pen-size" min="1" max="30" value="4"></label>
+      </div>
+      <div class="tool-group">
+        <button id="add-text" class="tool-btn" title="添加文字">✍️ 添加文字</button>
+        <button id="undo" class="tool-btn" title="撤销">↩️ 撤销</button>
+      </div>
+    </div>
+
+    <div class="canvas-wrap">
+      <canvas id="canvas"></canvas>
+      <div id="text-layer" class="text-layer"></div>
+    </div>
+
+    <div class="imagine-actions">
+      <button id="save-btn" class="btn btn-primary btn-lg">💾 保存我的想象</button>
+      <button id="clear-btn" class="btn btn-ghost">🗑️ 清空</button>
+      <span id="save-msg" class="like-msg"></span>
+    </div>
+    <p class="hint" style="text-align:center;">画笔随手画，点「添加文字」在画布上写字，可拖动。仅自己可见，保存在个人中心。</p>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>非标准答案 · 献给所有没有被标准定义的可能</p>
+    </div>
+  </footer>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const textLayer = document.getElementById('text-layer');
+
+    // 画布尺寸
+    const W = 600, H = 400;
+    canvas.width = W; canvas.height = H;
+    canvas.style.width = '100%';
+    canvas.style.aspectRatio = '3 / 2';
+
+    let strokes = [];        // 保存的笔画 [{color,size,points:[{x,y}]}]
+    let currentStroke = null;
+    let penColor = '#c94f4f';
+    let penSize = 4;
+    let tool = 'pen';
+    let texts = [];          // [{id,text,x,y,color}]
+
+    // 加载已保存内容
+    let saved = [];
+    try { saved = JSON.parse('{{ content | tojson | safe }}'); } catch(e) { saved = []; }
+    if (Array.isArray(saved)) {
+      if (saved.strokes) { strokes = saved.strokes; texts = saved.texts || []; }
+      else {
+        // 旧格式兼容
+        if (saved[0] && saved[0].points) strokes = saved;
+        else if (saved[0] && saved[0].text) texts = saved;
+      }
+    }
+
+    function render() {
+      ctx.clearRect(0, 0, W, H);
+      // 背景
+      ctx.fillStyle = '#fffdf9';
+      ctx.fillRect(0, 0, W, H);
+      for (const s of strokes) {
+        ctx.strokeStyle = s.color;
+        ctx.lineWidth = s.size;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        for (let i = 0; i < s.points.length; i++) {
+          if (i === 0) ctx.moveTo(s.points[i].x, s.points[i].y);
+          else ctx.lineTo(s.points[i].x, s.points[i].y);
+        }
+        ctx.stroke();
+      }
+      // 文字层用 DOM 显示
+      textLayer.innerHTML = '';
+      for (const t of texts) {
+        const el = document.createElement('div');
+        el.className = 'canvas-text';
+        el.textContent = t.text;
+        el.style.left = t.x + 'px';
+        el.style.top = t.y + 'px';
+        el.style.color = t.color || '#2b2b2b';
+        el.dataset.id = t.id;
+        el.contentEditable = true;
+        makeDraggable(el, t);
+        el.addEventListener('input', () => { t.text = el.textContent; });
+        textLayer.appendChild(el);
+      }
+    }
+
+    // 坐标换算（画布缩放）
+    function getPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: (e.clientX - rect.left) * (W / rect.width),
+        y: (e.clientY - rect.top) * (H / rect.height)
+      };
+    }
+
+    // 橡皮：删除与擦除位置相交的笔画（矢量擦除，保存/重绘都干净）
+    function eraseAt(x, y, r) {
+      const removed = [];
+      for (let i = strokes.length - 1; i >= 0; i--) {
+        const s = strokes[i];
+        let hit = false;
+        for (const pt of s.points) {
+          const d = Math.hypot(pt.x - x, pt.y - y);
+          if (d < (s.size / 2 + r)) { hit = true; break; }
+        }
+        if (hit) { strokes.splice(i, 1); removed.push(i); }
+      }
+      if (removed.length) render();
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+      const p = getPos(e);
+      if (tool === 'eraser') {
+        currentStroke = { eraser: true, size: penSize, points: [p] };
+        eraseAt(p.x, p.y, penSize / 2);
+      } else {
+        currentStroke = { color: penColor, size: penSize, points: [p] };
+        // 画起点圆点
+        ctx.fillStyle = penColor;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, penSize/2, 0, Math.PI*2);
+        ctx.fill();
+      }
+      canvas.addEventListener('mousemove', onMove);
+    });
+    window.addEventListener('mouseup', () => {
+      if (currentStroke) {
+        // 橡皮轨迹不存入 strokes（只删笔画），画笔轨迹才保存
+        if (!currentStroke.eraser) strokes.push(currentStroke);
+        currentStroke = null;
+      }
+      canvas.removeEventListener('mousemove', onMove);
+    });
+    function onMove(e) {
+      if (!currentStroke) return;
+      const p = getPos(e);
+      currentStroke.points.push(p);
+      const pts = currentStroke.points;
+      if (currentStroke.eraser) {
+        // 橡皮：删除经过位置的笔画
+        eraseAt(p.x, p.y, currentStroke.size / 2);
+      } else {
+        // 画笔：实时画
+        ctx.strokeStyle = currentStroke.color;
+        ctx.lineWidth = currentStroke.size;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        if (pts.length === 1) {
+          ctx.beginPath();
+          ctx.arc(pts[0].x, pts[0].y, currentStroke.size/2, 0, Math.PI*2);
+          ctx.fill();
+        } else {
+          ctx.beginPath();
+          ctx.moveTo(pts[pts.length-2].x, pts[pts.length-2].y);
+          ctx.lineTo(pts[pts.length-1].x, pts[pts.length-1].y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    // 橡皮：用背景色画
+    // 简单方案：橡皮工具时颜色=背景色
+    // 工具按钮
+    document.getElementById('tool-pen').addEventListener('click', () => { tool='pen'; setToolActive('tool-pen'); });
+    document.getElementById('tool-eraser').addEventListener('click', () => { tool='eraser'; setToolActive('tool-eraser'); });
+    function setToolActive(id) {
+      document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
+    document.getElementById('pen-color').addEventListener('input', (e) => {
+      penColor = e.target.value;
+      if (tool === 'eraser') { tool='pen'; setToolActive('tool-pen'); }
+    });
+    document.getElementById('pen-size').addEventListener('input', (e) => penSize = parseInt(e.target.value));
+
+    // 文字拖拽
+    function makeDraggable(el, t) {
+      let dragging = false, ox = 0, oy = 0;
+      el.addEventListener('mousedown', (e) => {
+        if (e.target === el) { dragging = true; ox = e.clientX - t.x; oy = e.clientY - t.y; }
+      });
+      window.addEventListener('mousemove', (e) => {
+        if (dragging) {
+          const rect = canvas.getBoundingClientRect();
+          t.x = Math.max(0, Math.min(W - 60, e.clientX - ox - rect.left * (W/rect.width) * 0 + (e.clientX - ox) - (e.clientX - ox)));
+          // 简化：相对画布
+          const r = canvas.getBoundingClientRect();
+          t.x = (e.clientX - ox - r.left) * (W / r.width);
+          t.y = (e.clientY - oy - r.top) * (H / r.height);
+          el.style.left = t.x + 'px';
+          el.style.top = t.y + 'px';
+        }
+      });
+      window.addEventListener('mouseup', () => dragging = false);
+    }
+
+    // 添加文字
+    let textId = 1;
+    document.getElementById('add-text').addEventListener('click', () => {
+      texts.push({ id: 't' + (textId++), text: '写点什么…', x: 80, y: 80, color: '#2b2b2b' });
+      render();
+    });
+
+    // 撤销
+    document.getElementById('undo').addEventListener('click', () => {
+      if (strokes.length) strokes.pop();
+      else if (texts.length) texts.pop();
+      render();
+    });
+
+    // 保存
+    const saveMsg = document.getElementById('save-msg');
+    document.getElementById('save-btn').addEventListener('click', async () => {
+      const data = { strokes: strokes, texts: texts };
+      const resp = await fetch('/api/imagine/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'content=' + encodeURIComponent(JSON.stringify(data))
+      });
+      if (resp.ok) saveMsg.textContent = '✓ 已保存到个人中心';
+      else saveMsg.textContent = '保存失败，请重试。';
+    });
+
+    // 清空
+    document.getElementById('clear-btn').addEventListener('click', async () => {
+      if (!confirm('确定清空整个画布吗？')) return;
+      strokes = []; texts = [];
+      render();
+      await fetch('/api/imagine/clear', { method: 'POST' });
+      saveMsg.textContent = '已清空。';
+    });
+
+    render();
+  </script>
+</body>
+</html>

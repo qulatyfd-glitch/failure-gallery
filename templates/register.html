@@ -1,0 +1,78 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>注册 · 非标准答案</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <h1 class="logo"><a href="{{ url_for('index') }}">非标准答案</a></h1>
+      <p class="tagline">注册一个身份，交出一件「失败」。</p>
+      <nav class="main-nav">
+        <a href="{{ url_for('index') }}" class="back-btn">← 返回</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container narrow">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flash-box">
+          {% for m in messages %}<p>{{ m }}</p>{% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" enctype="multipart/form-data" class="upload-form">
+      <div class="form-group">
+        <label for="username">用户名 *（2~20 个字符）</label>
+        <input type="text" id="username" name="username" required placeholder="你希望别人怎么称呼你？">
+      </div>
+
+      <div class="form-group">
+        <label for="password">密码 *（至少 6 位）</label>
+        <input type="password" id="password" name="password" required>
+      </div>
+
+      <div class="form-group">
+        <label for="password2">确认密码 *</label>
+        <input type="password" id="password2" name="password2" required>
+      </div>
+
+      <div class="form-group">
+        <label for="avatar">头像（可选）</label>
+        <input type="file" id="avatar" name="avatar" accept=".png,.jpg,.jpeg,.gif,.webp">
+      </div>
+
+      <div class="form-group disclaimer">
+        <h4>免责声明</h4>
+        <p>本网站展示的作品均来自用户，主题为「失败/偏离」的创作与想象。
+        内容由用户自行提交，不代表本站观点。你同意：</p>
+        <ul>
+          <li>不发布违法、侵权、色情、仇恨或恶意攻击他人的内容；</li>
+          <li>作品与言论由提交者本人负责，与本网站无关；</li>
+          <li>管理员有权对违规内容进行下架或删除处理；</li>
+          <li>你的用户名、作品、评论会在站内公开可见。</li>
+        </ul>
+        <label class="agree-line">
+          <input type="checkbox" name="agree" required>
+          我已阅读并同意以上免责声明 *
+        </label>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-lg">注册</button>
+      <p class="form-foot">已有账号？<a href="{{ url_for('login') }}">去登录</a></p>
+    </form>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>非标准答案 · 献给所有没有被标准定义的可能</p>
+    </div>
+  </footer>
+</body>
+</html>
+

@@ -1,0 +1,74 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理后台 · 非标准答案</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <h1 class="logo"><a href="{{ url_for('index') }}">非标准答案</a></h1>
+      <p class="tagline">管理后台 · 处理被举报下架的作品</p>
+      <nav class="main-nav">
+        <a href="{{ url_for('index') }}" class="back-btn">← 返回</a>
+        <form action="{{ url_for('admin_logout') }}" method="post" class="inline-form">
+          <button type="submit" class="btn btn-ghost">退出后台</button>
+        </form>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flash-box">
+          {% for m in messages %}<p>{{ m }}</p>{% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <h2 class="section-title">待处理（被举报达阈值自动下架）</h2>
+
+    {% if flagged %}
+      {% for art in flagged %}
+        <div class="admin-item">
+          <div class="admin-art">
+            <strong>#{{ art.id }} · {{ art.title }}</strong>
+            <span class="admin-meta">{{ art.display_name }} · 举报 {{ art.report_count }} 次</span>
+            <p>{{ art.story[:120] }}{% if art.story|length > 120 %}…{% endif %}</p>
+            <div class="admin-reports">
+              {% for r in art.reports %}
+                <span class="report-chip">{{ r.username }}：{{ r.reason or '无理由' }}</span>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="admin-actions">
+            <form action="{{ url_for('admin_action', artwork_id=art.id) }}" method="post" class="inline-form">
+              <input type="hidden" name="action" value="approve">
+              <button type="submit" class="btn btn-primary">恢复展示</button>
+            </form>
+            <form action="{{ url_for('admin_action', artwork_id=art.id) }}" method="post" class="inline-form"
+                  onsubmit="return confirm('确定删除该作品？')">
+              <input type="hidden" name="action" value="delete">
+              <button type="submit" class="btn btn-danger">删除</button>
+            </form>
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty-state">
+        <p>当前没有待处理的下架作品。一切安好。</p>
+      </div>
+    {% endif %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>非标准答案 · 献给所有没有被标准定义的可能</p>
+    </div>
+  </footer>
+</body>
+</html>
+

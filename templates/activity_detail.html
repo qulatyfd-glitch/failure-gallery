@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ post.title }} · 非标准答案</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <h1 class="logo"><a href="{{ url_for('index') }}">非标准答案</a></h1>
+      <nav class="main-nav">
+        <a href="{{ url_for('activities') }}" class="back-btn">← 返回活动</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container narrow">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flash-box">
+          {% for m in messages %}<p>{{ m }}</p>{% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <div class="post-card">
+      {% if post.image_filename %}
+        <div class="post-img">
+          <img src="{{ url_for('uploaded_file', filename=post.image_filename) }}" alt="{{ post.title }}">
+        </div>
+      {% endif %}
+      <div class="post-head">
+        <h2 class="post-title">{{ post.title }}</h2>
+        {% if post.is_vote %}
+          <span class="post-badge vote">🗳️ 主题投票</span>
+        {% else %}
+          <span class="post-badge">活动</span>
+        {% endif %}
+        {% if post.tag %}
+          <span class="post-badge tag">🏷️ {{ post.tag }}</span>
+        {% endif %}
+      </div>
+      <p class="post-content" style="white-space: pre-wrap;">{{ post.content }}</p>
+      <div class="post-meta">
+        <span>{{ post.author_name or '管理员' }} · {{ post.created_at }}</span>
+        {% if is_admin %}
+          <form action="{{ url_for('activity_delete', activity_id=post.id) }}" method="post" class="inline-form"
+                onsubmit="return confirm('确定删除这个活动吗？')">
+            <button type="submit" class="btn btn-danger">删除活动</button>
+          </form>
+        {% endif %}
+      </div>
+
+      {% if post.is_vote %}
+        <div class="vote-area">
+          <h4 class="vote-title">🗳️ 下一期展览主题投票</h4>
+          <div class="vote-options">
+            {% for opt in post.option_list %}
+              {% set idx = loop.index0 %}
+              <button class="vote-option {% if post.my_option == idx %}voted{% endif %}"
+                      data-id="{{ post.id }}" data-index="{{ idx }}">
+                <span class="vo-label">{{ opt }}</span>
+                <span class="vo-count">({{ post.option_votes.get(idx, 0) }} 票)</span>
+                {% if post.my_option == idx %}<span class="vo-check">✓ 已投</span>{% endif %}
+              </button>
+            {% endfor %}
+          </div>
+          <p class="vote-hint">共 {{ post.total_votes }} 票 · 单选，可改投。投一票，决定下一期展览主题。</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- 从活动直接上传作品（带活动 tag） -->
+    {% if post.tag %}
+      <div class="activity-upload">
+        <h3 class="section-title">🎨 为活动「{{ post.tag }}」投稿</h3>
+        {% if current_user %}
+          <form method="POST" enctype="multipart/form-data" action="{{ url_for('activity_upload', activity_id=post.id) }}" class="upload-form">
+            <div class="form-group">
+              <label for="title">作品标题 *</label>
+              <input type="text" id="title" name="title" required placeholder="给这个「失败」起个名字">
+            </div>
+            <div class="form-group">
+              <label for="story">失败背后的故事 / 作品说明 *</label>
+              <textarea id="story" name="story" rows="4" required placeholder="它原本应该是什么？又偏离成了什么？"></textarea>
+            </div>
+            <div class="form-group">
+              <label for="category">所属展厅 *</label>
+              <select id="category" name="category">
+                {% for key, (name, desc) in categories.items() %}
+                  <option value="{{ key }}">{{ name }} — {{ desc }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="image">作品图片（可选，可纯文字）</label>
+              <input type="file" id="image" name="image" accept=".png,.jpg,.jpeg,.gif,.webp">
+            </div>
+            <div class="form-group">
+              <label>
+                <input type="checkbox" name="anonymous"> 匿名发布
+              </label>
+            </div>
+            <div class="form-group">
+              <label for="author">署名（可选）</label>
+              <input type="text" id="author" name="author" placeholder="你的名字或代号">
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg">为活动投稿</button>
+            <p class="hint">发布后作品会带上「{{ post.tag }}」标签。</p>
+          </form>
+        {% else %}
+          <p class="login-hint"><a href="{{ url_for('login') }}">登录</a>后可以为活动投稿。</p>
+        {% endif %}
+      </div>
+
+      {% if tagged %}
+        <div class="tagged-works">
+          <h3 class="section-title">🏷️ 已投稿的作品（{{ tagged|length }}）</h3>
+          <div class="gallery">
+            {% for art in tagged %}
+              <a href="{{ url_for('detail', artwork_id=art.id) }}" class="card">
+                <div class="card-img">
+                  {% if art.image_filename %}
+                    <img src="{{ url_for('uploaded_file', filename=art.image_filename) }}" alt="{{ art.title }}" loading="lazy">
+                  {% else %}
+                    <div class="text-card-placeholder">文字作品</div>
+                  {% endif %}
+                </div>
+                <div class="card-body">
+                  <h3 class="card-title">{{ art.title }}</h3>
+                  <p class="card-story">{{ art.story[:50] }}{% if art.story|length > 50 %}…{% endif %}</p>
+                  <div class="card-meta">
+                    <span class="author">{{ art.display_name }}</span>
+                    <span class="likes">♥ {{ art.likes }}</span>
+                  </div>
+                </div>
+              </a>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+    {% endif %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>非标准答案 · 献给所有没有被标准定义的可能</p>
+    </div>
+  </footer>
+
+  <script>
+    document.querySelectorAll('.vote-option').forEach(function (btn) {
+      btn.addEventListener('click', async function () {
+        const resp = await fetch('/api/vote/' + btn.dataset.id, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: 'option_index=' + btn.dataset.index
+        });
+        if (resp.status === 401) { alert('请先登录后再投票。'); return; }
+        const data = await resp.json();
+        if (data.error) { alert(data.error); return; }
+        // 更新所有选项的选中态和票数（简化：刷新页面）
+        location.reload();
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,165 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>个人中心 · 非标准答案</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <h1 class="logo logo-narrow"><a href="{{ url_for('index') }}">非标准答案</a></h1>
+      <nav class="main-nav">
+        <a href="{{ url_for('index') }}" class="back-btn">← 返回</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flash-box">
+          {% for m in messages %}<p>{{ m }}</p>{% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <div class="profile-head">
+      <div class="avatar-lg">
+        {% if user.avatar_filename %}
+          <img src="{{ url_for('avatar_file', filename=user.avatar_filename) }}" alt="头像">
+        {% else %}
+          <div class="avatar-fallback">{{ user.username[0] }}</div>
+        {% endif %}
+      </div>
+      <div class="profile-info">
+        <h2>{{ user.username }}</h2>
+        <p class="profile-meta">加入于 {{ user.created_at }}</p>
+        <div class="profile-stats">
+          <span>作品 {{ artworks|length }}</span>
+          <span>评论 {{ comments_count }}</span>
+          <span>未读通知 {{ unread }}</span>
+        </div>
+      </div>
+      <div class="profile-actions">
+        <a href="{{ url_for('notifications') }}" class="btn">🔔 查看通知</a>
+        <a href="{{ url_for('account_options') }}" class="btn btn-ghost">登录选项</a>
+      </div>
+    </div>
+
+    <!-- 标签页 -->
+    <nav class="profile-tabbar">
+      <a href="{{ url_for('profile', tab='works') }}" class="tab {% if tab == 'works' %}active{% endif %}">我的作品</a>
+      <a href="{{ url_for('profile', tab='favorites') }}" class="tab {% if tab == 'favorites' %}active{% endif %}">我的收藏</a>
+      <a href="{{ url_for('profile', tab='history') }}" class="tab {% if tab == 'history' %}active{% endif %}">观看历史</a>
+    </nav>
+
+    {% if tab == 'favorites' %}
+      <div class="profile-tabs">
+        <h3 class="section-title">我的收藏（{{ favorites|length }}）</h3>
+        {% if favorites %}
+          <div class="gallery">
+            {% for art in favorites %}
+              <a href="{{ url_for('detail', artwork_id=art.id) }}" class="card">
+                <div class="card-img">
+                  {% if art.image_filename %}
+                    <img src="{{ url_for('uploaded_file', filename=art.image_filename) }}" alt="{{ art.title }}" loading="lazy">
+                  {% else %}
+                    <div class="text-card-placeholder">文字作品</div>
+                  {% endif %}
+                </div>
+                <div class="card-body">
+                  <h3 class="card-title">{{ art.title }}</h3>
+                  <p class="card-story">{{ art.story[:50] }}{% if art.story|length > 50 %}…{% endif %}</p>
+                  <div class="card-meta">
+                    <span class="author">{{ art.display_name }}</span>
+                    <span class="likes">♥ {{ art.likes }}</span>
+                  </div>
+                </div>
+              </a>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state">
+            <p>你还没有收藏任何作品。</p>
+            <p>去门廊逛逛，把打动你的「失败」收藏起来吧。</p>
+            <a href="{{ url_for('index') }}" class="btn btn-primary">去门廊逛逛</a>
+          </div>
+        {% endif %}
+      </div>
+    {% elif tab == 'history' %}
+      <div class="profile-tabs">
+        <h3 class="section-title">观看历史（{{ history|length }}）</h3>
+        {% if history %}
+          <div class="gallery">
+            {% for art in history %}
+              <a href="{{ url_for('detail', artwork_id=art.id) }}" class="card">
+                <div class="card-img">
+                  {% if art.image_filename %}
+                    <img src="{{ url_for('uploaded_file', filename=art.image_filename) }}" alt="{{ art.title }}" loading="lazy">
+                  {% else %}
+                    <div class="text-card-placeholder">文字作品</div>
+                  {% endif %}
+                </div>
+                <div class="card-body">
+                  <h3 class="card-title">{{ art.title }}</h3>
+                  <p class="card-story">{{ art.story[:50] }}{% if art.story|length > 50 %}…{% endif %}</p>
+                  <div class="card-meta">
+                    <span class="author">{{ art.display_name }}</span>
+                    <span class="likes">♥ {{ art.likes }}</span>
+                  </div>
+                </div>
+              </a>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state">
+            <p>还没有观看历史。</p>
+            <p>去看一件作品，它会出现在这里。</p>
+            <a href="{{ url_for('index') }}" class="btn btn-primary">去门廊逛逛</a>
+          </div>
+        {% endif %}
+      </div>
+    {% else %}
+      <div class="profile-tabs">
+        <h3 class="section-title">我发布的作品（{{ artworks|length }}）</h3>
+        {% if artworks %}
+          <div class="gallery">
+            {% for art in artworks %}
+              <a href="{{ url_for('detail', artwork_id=art.id) }}" class="card">
+                <div class="card-img">
+                  {% if art.image_filename %}
+                    <img src="{{ url_for('uploaded_file', filename=art.image_filename) }}" alt="{{ art.title }}" loading="lazy">
+                  {% else %}
+                    <div class="text-card-placeholder">文字作品</div>
+                  {% endif %}
+                </div>
+                <div class="card-body">
+                  <h3 class="card-title">{{ art.title }}</h3>
+                  <p class="card-story">{{ art.story[:50] }}{% if art.story|length > 50 %}…{% endif %}</p>
+                  <div class="card-meta">
+                    <span class="author">{{ art.display_name }}</span>
+                    <span class="likes">♥ {{ art.likes }}</span>
+                  </div>
+                </div>
+              </a>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state">
+            <p>你还没有发布过作品。</p>
+            <a href="{{ url_for('upload') }}" class="btn btn-primary">发布我的第一个「失败」</a>
+          </div>
+        {% endif %}
+      </div>
+    {% endif %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>非标准答案 · 献给所有没有被标准定义的可能</p>
+    </div>
+  </footer>
+</body>
+</html>

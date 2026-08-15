@@ -1,0 +1,114 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>上传 · 非标准答案</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <h1 class="logo"><a href="{{ url_for('index') }}">非标准答案</a></h1>
+      <p class="tagline">把「失败」交出来，它也许正是想象力的入口。</p>
+      <nav class="main-nav">
+        <a href="{{ url_for('index') }}" class="back-btn">← 返回</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container narrow">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flash-box">
+          {% for m in messages %}<p>{{ m }}</p>{% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% if old.get('has_image') %}
+      <div class="draft-note">📝 你有一份草稿（已自动载入），可继续编辑或直接发布。</div>
+    {% endif %}
+
+    <form method="POST" enctype="multipart/form-data" class="upload-form">
+      <div class="form-group">
+        <label for="title">作品标题 *</label>
+        <input type="text" id="title" name="title" required
+               placeholder="给这个「失败」起个名字"
+               value="{{ old.title or '' }}">
+      </div>
+
+      <div class="form-group">
+        <label for="story">失败背后的故事 / 作品说明 *</label>
+        <textarea id="story" name="story" rows="6" required
+                  placeholder="它原本应该是什么？又发生了什么偏离？在失败之中，你看见了什么新的可能？">{{ old.story or '' }}</textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="category">所属展厅 *</label>
+        <select id="category" name="category">
+          {% for key, (name, desc) in categories.items() %}
+            <option value="{{ key }}" {% if old.get('category') == key %}selected{% endif %}>{{ name }} — {{ desc }}</option>
+          {% endfor %}
+        </select>
+        <p class="hint">你的「失败」最接近哪一种？</p>
+      </div>
+
+      <div class="form-group">
+        <label for="image">作品图片（可选，纯文字作品可不传；png / jpg / gif / webp，8MB 以内）</label>
+        <input type="file" id="image" name="image" accept=".png,.jpg,.jpeg,.gif,.webp">
+        <p class="hint">可以是一张图片 + 你的文字；也可以只有文字。</p>
+        {% if old.get('has_image') %}
+          <p class="hint existing-img">已有图片（重新选择可替换，发布后可在编辑页移除）</p>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label>
+          <input type="checkbox" name="anonymous"
+                 {% if old.get('anonymous') %}checked{% endif %}>
+          匿名发布
+        </label>
+        <p class="hint">匿名时不会显示你的名字。</p>
+      </div>
+
+      <div class="form-group" id="author-field">
+        <label for="author">署名（可选，默认你的用户名）</label>
+        <input type="text" id="author" name="author"
+               placeholder="你的名字或代号"
+               value="{{ old.get('author') or '' }}">
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" id="submit-btn" class="btn btn-primary btn-lg">上传我的失败</button>
+        <button type="submit" name="save_draft" value="1" class="btn btn-ghost">保存草稿</button>
+      </div>
+    </form>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>非标准答案 · 献给所有没有被标准定义的可能</p>
+    </div>
+  </footer>
+
+  <script>
+    // 提交按钮：鼠标悬停时显示「上传新的成功」，移开恢复「上传我的失败」
+    const btn = document.getElementById('submit-btn');
+    btn.addEventListener('mouseenter', () => { btn.textContent = '上传新的成功'; });
+    btn.addEventListener('mouseleave', () => { btn.textContent = '上传我的失败'; });
+    // 触屏支持（按下去时改变）
+    btn.addEventListener('touchstart', () => { btn.textContent = '上传新的成功'; });
+    btn.addEventListener('touchend', () => { btn.textContent = '上传我的失败'; });
+
+    // 匿名勾选时隐藏署名
+    const anon = document.querySelector('input[name="anonymous"]');
+    const authorField = document.getElementById('author-field');
+    anon.addEventListener('change', function () {
+      authorField.style.display = anon.checked ? 'none' : '';
+    });
+    if (anon.checked) authorField.style.display = 'none';
+  </script>
+</body>
+</html>
+

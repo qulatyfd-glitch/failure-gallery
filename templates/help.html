@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>帮助 · 非标准答案</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <h1 class="logo"><a href="{{ url_for('index') }}">非标准答案</a></h1>
+      <p class="tagline">这里是「非标准答案」的使用指南。</p>
+      <nav class="main-nav">
+        <a href="{{ url_for('index') }}" class="back-btn">← 返回</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container narrow">
+    <h2 class="section-title">📖 使用指南</h2>
+
+    <div class="help-card">
+      <h3>🖼️ 浏览作品</h3>
+      <p>进入「门廊」，可以按时间、当日热度或随机方式浏览大家上传的作品。通过顶部的下拉菜单可以筛选不同展厅（偏题、错误推演、搁浅作、不合格品、意外用途、无法归类），还可以用搜索框按标题、故事或作者查找。</p>
+    </div>
+
+    <div class="help-card">
+      <h3>📤 上传作品</h3>
+      <p>点击底部导航的「＋」或门廊的「上传」按钮。填写标题、失败背后的故事，选择所属展厅，可以上传一张图片，也可以只写文字。支持保存草稿，下次进入会自动载入。鼠标悬停在提交按钮上时，它会变成「上传新的成功」——这是属于失败者的仪式。</p>
+    </div>
+
+    <div class="help-card">
+      <h3>❤️ 点赞 / ⭐ 收藏</h3>
+      <p>在作品详情页，可以点赞或收藏作品。收藏的作品会出现在个人中心的「我的收藏」里。</p>
+    </div>
+
+    <div class="help-card">
+      <h3>💬 评论与更多可能性</h3>
+      <p>登录后可以评论作品，也可以在「更多可能性」区块里，为一件「失败」提供另一种理解——那是作品最动人的部分。</p>
+    </div>
+
+    <div class="help-card">
+      <h3>📢 活动与投票</h3>
+      <p>在「活动」页可以看到管理员发布的公告与主题征集。对下一期展览主题的投票帖，每位登录用户都可以投一票。</p>
+    </div>
+
+    <div class="help-card">
+      <h3>👤 个人中心</h3>
+      <p>在「我」页面可以查看自己发布的作品、我的收藏、观看历史，也可以退出登录。</p>
+    </div>
+
+    <div class="help-card">
+      <h3>🕶️ 匿名与隐私</h3>
+      <p>上传作品时可以选择匿名发布，不会显示你的名字。请遵守免责声明：不发布违法、侵权或恶意内容。</p>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>非标准答案 · 献给所有没有被标准定义的可能</p>
+    </div>
+  </footer>
+</body>
+</html>

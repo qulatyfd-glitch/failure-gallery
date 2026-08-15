@@ -1,0 +1,224 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ artwork.title }} · 非标准答案</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <h1 class="logo"><a href="{{ url_for('index') }}">非标准答案</a></h1>
+      <nav class="main-nav">
+        <a href="{{ url_for('index') }}" class="back-btn">← 返回</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container detail">
+    <div class="detail-left">
+      {% if artwork.image_filename %}
+        <div class="detail-img">
+          <img src="{{ url_for('uploaded_file', filename=artwork.image_filename) }}" alt="{{ artwork.title }}">
+        </div>
+      {% else %}
+        <div class="detail-img detail-text-only">
+          <div class="text-art-large">📄</div>
+          <p class="text-art-caption">纯文字作品</p>
+        </div>
+      {% endif %}
+
+      <div class="detail-body">
+        <p class="detail-category">
+          {% set cat = categories.get(artwork.category) %}
+          {{ cat[0] if cat else '未分类' }}
+          {% if artwork.activity_tag %}
+            <span class="detail-act-tag">🏷️ {{ artwork.activity_tag }}</span>
+          {% endif %}
+        </p>
+        <h2 class="detail-title">{{ artwork.title }}</h2>
+        <p class="detail-meta">
+          <span class="author">{{ artwork.display_name }}</span>
+          · {{ artwork.created_at }}
+          {% if artwork.updated_at and artwork.updated_at != artwork.created_at %}
+            · 已编辑
+          {% endif %}
+        </p>
+
+        <div class="detail-story">
+          <h3>「失败」的故事</h3>
+          <p style="white-space: pre-wrap;">{{ artwork.story }}</p>
+        </div>
+
+        <div class="detail-actions">
+          <button id="like-btn" class="btn btn-like" data-id="{{ artwork.id }}">
+            ♥ <span id="like-count">{{ artwork.likes }}</span> 人觉得它很珍贵
+          </button>
+          <button id="fav-btn" class="btn btn-like {% if my_fav %}liked{% endif %}" data-id="{{ artwork.id }}">
+            ⭐ <span id="fav-text">{% if my_fav %}已收藏{% else %}收藏{% endif %}</span>
+          </button>
+          {% if current_user and current_user.id == artwork.user_id %}
+            <a href="{{ url_for('edit', artwork_id=artwork.id) }}" class="btn">编辑</a>
+            <form action="{{ url_for('delete', artwork_id=artwork.id) }}" method="post" class="inline-form"
+                  onsubmit="return confirm('确定删除这件作品吗？此操作不可恢复。')">
+              <button type="submit" class="btn btn-danger">删除</button>
+            </form>
+          {% endif %}
+          <button id="report-btn" class="btn btn-ghost">举报</button>
+        </div>
+        <p id="like-msg" class="like-msg"></p>
+        <p class="report-note">已被举报 {{ report_count }} 次（达到 {{ 2 }} 次将自动下架）</p>
+      </div>
+
+      <!-- 举报弹窗 -->
+      <div id="report-modal" class="modal hidden">
+        <div class="modal-box">
+          <h3>举报这个作品</h3>
+          <textarea id="report-reason" rows="3" placeholder="为什么举报？(可选)"></textarea>
+          <div class="modal-actions">
+            <button class="btn btn-ghost" onclick="closeReport()">取消</button>
+            <button class="btn btn-danger" onclick="sendReport()">提交举报</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-right">
+      <!-- 评论区 -->
+      <section class="talk-section">
+        <h3 class="section-title">💬 评论</h3>
+        {% if current_user %}
+          <form class="talk-form" onsubmit="postTalk('comment'); return false;">
+            <textarea id="comment-input" rows="3" placeholder="说说你看见的这个「失败」…"></textarea>
+            <button type="submit" class="btn btn-primary">发表评论</button>
+          </form>
+        {% else %}
+          <p class="login-hint"><a href="{{ url_for('login') }}">登录</a>后可以评论</p>
+        {% endif %}
+        <div id="comment-list">
+          {% for c in comments %}
+            <div class="talk-item">
+              <span class="talk-author">{{ c.username }}</span>
+              <p>{{ c.content }}</p>
+              <span class="talk-time">{{ c.created_at }}</span>
+            </div>
+          {% else %}
+            <p class="empty-tiny">还没有评论。</p>
+          {% endfor %}
+        </div>
+      </section>
+
+      <!-- 更多可能性 -->
+      <section class="talk-section">
+        <h3 class="section-title">✨ 更多可能性</h3>
+        <p class="section-sub">观众为这件「失败」提供另一种理解。</p>
+        {% if current_user %}
+          <form class="talk-form" onsubmit="postTalk('interpret'); return false;">
+            <textarea id="interpret-input" rows="3" placeholder="在这个失败里，你看见了什么别的可能？"></textarea>
+            <button type="submit" class="btn btn-primary">提供一种可能</button>
+          </form>
+        {% else %}
+          <p class="login-hint"><a href="{{ url_for('login') }}">登录</a>后可以贡献你的理解</p>
+        {% endif %}
+        <div id="interpret-list">
+          {% for i in interpretations %}
+            <div class="talk-item">
+              <span class="talk-author">{{ i.username }}</span>
+              <p>{{ i.content }}</p>
+              <span class="talk-time">{{ i.created_at }}</span>
+            </div>
+          {% else %}
+            <p class="empty-tiny">还没有人贡献新的可能。</p>
+          {% endfor %}
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>非标准答案 · 献给所有没有被标准定义的可能</p>
+    </div>
+  </footer>
+
+  <script>
+    const artworkId = {{ artwork.id }};
+    const likeBtn = document.getElementById('like-btn');
+    const likeCount = document.getElementById('like-count');
+    const likeMsg = document.getElementById('like-msg');
+
+    likeBtn.addEventListener('click', async function () {
+      try {
+        const resp = await fetch('/api/like/' + artworkId, { method: 'POST' });
+        if (resp.status === 401) { likeMsg.textContent = '请先登录后再点赞。'; return; }
+        const data = await resp.json();
+        likeCount.textContent = data.likes;
+        likeBtn.classList.toggle('liked', data.liked);
+        likeMsg.textContent = data.liked ? '谢谢你，看见了它不一样的价值。' : '已取消这次点赞。';
+      } catch (e) { likeMsg.textContent = '操作失败，请重试。'; }
+    });
+
+    // 收藏
+    const favBtn = document.getElementById('fav-btn');
+    const favText = document.getElementById('fav-text');
+    favBtn.addEventListener('click', async function () {
+      try {
+        const resp = await fetch('/api/favorite/' + artworkId, { method: 'POST' });
+        if (resp.status === 401) { alert('请先登录后再收藏。'); return; }
+        const data = await resp.json();
+        favBtn.classList.toggle('liked', data.favored);
+        favText.textContent = data.favored ? '已收藏' : '收藏';
+      } catch (e) { alert('操作失败，请重试。'); }
+    });
+
+    async function postTalk(type) {
+      const inputId = type === 'comment' ? 'comment-input' : 'interpret-input';
+      const listId = type === 'comment' ? 'comment-list' : 'interpret-list';
+      const input = document.getElementById(inputId);
+      const content = input.value.trim();
+      if (!content) return;
+      const resp = await fetch('/api/' + (type === 'comment' ? 'comment' : 'interpret') + '/' + artworkId, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'content=' + encodeURIComponent(content)
+      });
+      if (resp.ok) {
+        const list = document.getElementById(listId);
+        const empty = list.querySelector('.empty-tiny');
+        if (empty) empty.remove();
+        const me = document.createElement('div');
+        me.className = 'talk-item';
+        me.innerHTML = '<span class="talk-author">我</span><p>' + content.replace(/</g, '&lt;') + '</p>';
+        list.prepend(me);
+        input.value = '';
+      } else {
+        const data = await resp.json();
+        alert(data.error || '操作失败');
+      }
+    }
+
+    // 举报
+    const reportModal = document.getElementById('report-modal');
+    document.getElementById('report-btn').addEventListener('click', () => reportModal.classList.remove('hidden'));
+    function closeReport() { reportModal.classList.add('hidden'); }
+    async function sendReport() {
+      const reason = document.getElementById('report-reason').value.trim();
+      const resp = await fetch('/api/report/' + artworkId, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'reason=' + encodeURIComponent(reason)
+      });
+      const data = await resp.json();
+      if (resp.ok) {
+        alert(data.hidden ? '该作品已因举报达阈值被自动下架，感谢你的维护。' : '举报已提交，感谢你的维护。');
+        closeReport();
+        if (data.hidden) location.href = '/';
+      } else {
+        alert(data.error || '操作失败');
+      }
+    }
+  </script>
+</body>
+</html>
+

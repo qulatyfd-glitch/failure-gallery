@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>活动 · 非标准答案</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <h1 class="logo"><a href="{{ url_for('index') }}">非标准答案</a></h1>
+      <p class="tagline">这里的活动，由大家一起定义。</p>
+      <nav class="main-nav">
+        <a href="{{ url_for('index') }}" class="back-btn">← 返回</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container narrow">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flash-box">
+          {% for m in messages %}<p>{{ m }}</p>{% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <div class="activities-head">
+      <h2 class="section-title">📢 活动</h2>
+      {% if is_admin %}
+        <a href="{{ url_for('activity_new') }}" class="btn btn-primary">＋ 发布活动</a>
+      {% endif %}
+    </div>
+
+    {% if posts %}
+      <div class="post-list">
+        {% for post in posts %}
+          <a href="{{ url_for('activity_detail', activity_id=post.id) }}" class="post-card-link">
+            <div class="post-card">
+              {% if post.image_filename %}
+                <div class="post-img">
+                  <img src="{{ url_for('uploaded_file', filename=post.image_filename) }}" alt="{{ post.title }}">
+                </div>
+              {% endif %}
+              <div class="post-head">
+                <h3 class="post-title">{{ post.title }}</h3>
+                {% if post.is_vote %}
+                  <span class="post-badge vote">🗳️ 主题投票</span>
+                {% else %}
+                  <span class="post-badge">活动</span>
+                {% endif %}
+                {% if post.tag %}
+                  <span class="post-badge tag">🏷️ {{ post.tag }}</span>
+                {% endif %}
+              </div>
+              <p class="post-content">{{ post.content[:120] }}{% if post.content|length > 120 %}…{% endif %}</p>
+              <div class="post-meta">
+                <span>{{ post.author_name or '管理员' }} · {{ post.created_at }} · {{ post.total_votes }} 票</span>
+              </div>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <p>还没有活动。管理员会在这里发布主题征集与公告。</p>
+      </div>
+    {% endif %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>非标准答案 · 献给所有没有被标准定义的可能</p>
+    </div>
+  </footer>
+</body>
+</html>

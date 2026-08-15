@@ -1,0 +1,68 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>通知 · 非标准答案</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <h1 class="logo"><a href="{{ url_for('index') }}">非标准答案</a></h1>
+      <nav class="main-nav">
+        <a href="{{ url_for('index') }}" class="back-btn">← 返回</a>
+        <a href="{{ url_for('profile') }}" class="nav-link">我的</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container narrow">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flash-box">
+          {% for m in messages %}<p>{{ m }}</p>{% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <h2 class="section-title">🔔 通知</h2>
+
+    {% if notifications %}
+      <div class="notice-list">
+        {% for n in notifications %}
+          <a href="{{ url_for('detail', artwork_id=n.artwork_id) }}" class="notice-item {% if not n.is_read %}unread{% endif %}">
+            <div class="notice-main">
+              {% if n.type == 'like' %}
+                <span class="notice-icon">♥</span>
+                <span><strong>{{ n.from_username or '有人' }}</strong> 赞了你的作品「{{ n.artwork_title }}」</span>
+              {% elif n.type == 'comment' %}
+                <span class="notice-icon">💬</span>
+                <span><strong>{{ n.from_username or '有人' }}</strong> 评论了你的作品「{{ n.artwork_title }}」</span>
+              {% elif n.type == 'interpret' %}
+                <span class="notice-icon">✨</span>
+                <span><strong>{{ n.from_username or '有人' }}</strong> 为你的作品「{{ n.artwork_title }}」提供了新的可能</span>
+              {% endif %}
+            </div>
+            <div class="notice-time">{{ n.created_at }}</div>
+          </a>
+        {% endfor %}
+      </div>
+      <form action="{{ url_for('mark_notifications_read') }}" method="post" class="inline-form">
+        <button type="submit" class="btn btn-ghost">全部标为已读</button>
+      </form>
+    {% else %}
+      <div class="empty-state">
+        <p>还没有通知。当有人为你的作品点赞、评论或提供新的可能时，会在这里提醒你。</p>
+      </div>
+    {% endif %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>非标准答案 · 献给所有没有被标准定义的可能</p>
+    </div>
+  </footer>
+</body>
+</html>
+

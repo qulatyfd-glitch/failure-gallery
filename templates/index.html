@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>门廊 · 非标准答案</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <h1 class="logo">非标准答案</h1>
+      <p class="tagline">每一个「失败」里，都藏着未被定义的想象。</p>
+
+      <div class="search-bar">
+        <form action="{{ url_for('index') }}" method="get">
+          <input type="hidden" name="sort" value="{{ sort }}">
+          <input type="hidden" name="category" value="{{ category }}">
+          <input type="text" name="q" value="{{ q }}" placeholder="搜索标题、故事、作者…">
+          <button type="submit" class="btn btn-primary">搜索</button>
+        </form>
+      </div>
+
+      <div class="user-area">
+        {% if current_user %}
+          <span class="hello">你好，{{ current_user.username }}</span>
+        {% else %}
+          <a href="{{ url_for('login') }}" class="nav-link">登录</a>
+          <a href="{{ url_for('register') }}" class="btn btn-primary">注册</a>
+        {% endif %}
+      </div>
+
+      <div class="corner-nav">
+        <a href="{{ url_for('help_page') }}" class="nav-link">帮助</a>
+        <a href="{{ url_for('about') }}" class="nav-link">关于我们</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- 装饰横幅 -->
+  <div class="hero-banner">
+    <img src="{{ url_for('static', filename='banner.svg') }}" alt="非标准答案 · 装饰插画">
+  </div>
+
+  {% if active_act %}
+    <div class="active-banner">
+      <a href="{{ url_for('activity_detail', activity_id=active_act.id) }}">
+        <span class="ab-label">📢 正在进行</span>
+        <span class="ab-title">{{ active_act.title }}</span>
+        {% if active_act.tag %}<span class="ab-tag">🏷️ {{ active_act.tag }}</span>{% endif %}
+        <span class="ab-go">去参与 →</span>
+      </a>
+    </div>
+  {% endif %}
+
+  <main class="container">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flash-box">
+          {% for m in messages %}<p>{{ m }}</p>{% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <!-- 展厅分类 + 排序（下拉选择） -->
+    <form action="{{ url_for('index') }}" method="get" class="filter-form" id="filter-form">
+      <input type="hidden" name="q" value="{{ q }}">
+      <div class="filter-row">
+        <label class="filter-label">展厅</label>
+        <select name="category" class="filter-select" onchange="document.getElementById('filter-form').submit()">
+          <option value="" {% if not category %}selected{% endif %}>全部展厅</option>
+          {% for key, (name, desc) in categories.items() %}
+            <option value="{{ key }}" {% if category == key %}selected{% endif %}>{{ name }} — {{ desc }}</option>
+          {% endfor %}
+        </select>
+
+        <label class="filter-label">排序</label>
+        <select name="sort" class="filter-select" onchange="document.getElementById('filter-form').submit()">
+          <option value="time" {% if sort == 'time' %}selected{% endif %}>最新</option>
+          <option value="hot" {% if sort == 'hot' %}selected{% endif %}>当日热度</option>
+          <option value="random" {% if sort == 'random' %}selected{% endif %}>随机</option>
+        </select>
+
+        <span class="sort-count">共 {{ total }} 件作品</span>
+      </div>
+    </form>
+
+    <!-- 热度榜（近一周） -->
+    {% if hot_list %}
+      <section class="hot-section">
+        <h2 class="section-title">🔥 近一周热度榜</h2>
+        <div class="hot-list">
+          {% for art in hot_list[:5] %}
+            <a href="{{ url_for('detail', artwork_id=art.id) }}" class="hot-item">
+              {% if art.image_filename %}
+                <img src="{{ url_for('uploaded_file', filename=art.image_filename) }}" alt="">
+              {% else %}
+                <div class="hot-noimg">文</div>
+              {% endif %}
+              <div class="hot-info">
+                <span class="hot-rank">#{{ loop.index }}</span>
+                <span class="hot-title">{{ art.title }}</span>
+                <span class="hot-meta">{{ art.display_name }} · ♥ {{ art.likes }}</span>
+              </div>
+            </a>
+          {% endfor %}
+        </div>
+      </section>
+    {% endif %}
+
+    {% if artworks %}
+      <div class="gallery">
+        {% for art in artworks %}
+          <a href="{{ url_for('detail', artwork_id=art.id) }}" class="card">
+            <div class="card-img">
+              {% if art.image_filename %}
+                <img src="{{ url_for('uploaded_file', filename=art.image_filename) }}" alt="{{ art.title }}" loading="lazy">
+              {% else %}
+                <div class="text-card-placeholder">文字作品</div>
+              {% endif %}
+            </div>
+            <div class="card-body">
+              <h3 class="card-title">{{ art.title }}</h3>
+              <p class="card-story">{{ art.story[:60] }}{% if art.story|length > 60 %}…{% endif %}</p>
+              <div class="card-meta">
+                <span class="author">{{ art.display_name }}</span>
+                <span class="likes">♥ {{ art.likes }}</span>
+              </div>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+
+      {% if total_pages > 1 %}
+        <div class="pagination">
+          {% if page > 1 %}
+            <a href="{{ url_for('index', sort=sort, q=q, category=category, page=page-1) }}" class="chip">上一页</a>
+          {% endif %}
+          <span class="page-info">第 {{ page }} / {{ total_pages }} 页</span>
+          {% if page < total_pages %}
+            <a href="{{ url_for('index', sort=sort, q=q, category=category, page=page+1) }}" class="chip">下一页</a>
+          {% endif %}
+        </div>
+      {% endif %}
+    {% else %}
+      <div class="empty-state">
+        <p>这里还空着 —— 就像一切伟大想象开始之前的样子。</p>
+        {% if q %}<p>没有找到与「{{ q }}」相关的作品。</p>{% endif %}
+        <p>勇敢地，把你「失败」的故事交出来吧。</p>
+        <a href="{{ url_for('upload') }}" class="btn btn-primary btn-lg">提交第一件失败作品</a>
+      </div>
+    {% endif %}
+  </main>
+
+  <!-- 底部导航（窄） -->
+  <nav class="bottom-nav">
+    <a href="{{ url_for('index') }}" class="bn-item active">
+      <span class="bn-icon">🖼️</span><span>门廊</span>
+    </a>
+    <a href="{{ url_for('activities') }}" class="bn-item">
+      <span class="bn-icon">📢</span><span>活动</span>
+    </a>
+    <a href="{{ url_for('upload') }}" class="bn-item bn-center">
+      <span class="bn-plus">＋</span><span>上传</span>
+    </a>
+    {% if is_admin %}
+      <a href="{{ url_for('review') }}" class="bn-item">
+        <span class="bn-icon">🛡️</span><span>审核</span>
+      </a>
+    {% else %}
+      <a href="{{ url_for('imagine') }}" class="bn-item">
+        <span class="bn-icon">🎨</span><span>想象</span>
+      </a>
+    {% endif %}
+    <a href="{{ url_for('profile') }}" class="bn-item">
+      <span class="bn-icon">👤</span><span>我</span>
+    </a>
+  </nav>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>非标准答案 · 献给所有没有被标准定义的可能</p>
+    </div>
+  </footer>
+</body>
+</html>

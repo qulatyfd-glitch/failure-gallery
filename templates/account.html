@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>登录选项 · 非标准答案</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <h1 class="logo"><a href="{{ url_for('index') }}">非标准答案</a></h1>
+      <p class="tagline">登录选项</p>
+      <nav class="main-nav">
+        <a href="{{ url_for('profile') }}" class="back-btn">← 返回</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container narrow">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flash-box">
+          {% for m in messages %}<p>{{ m }}</p>{% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <div class="account-box">
+      <h2 class="section-title">⚙️ 登录选项</h2>
+
+      <div class="account-item">
+        <div class="ai-info">
+          <h3>退出登录</h3>
+          <p>退出当前账号（{{ current_user.username }}）。</p>
+        </div>
+        <form action="{{ url_for('logout') }}" method="post">
+          <button type="submit" class="btn">退出登录</button>
+        </form>
+      </div>
+
+      <div class="account-item">
+        <div class="ai-info">
+          <h3>切换账号</h3>
+          <p>退出当前账号并切换到另一个账号。</p>
+        </div>
+        <form action="{{ url_for('logout') }}" method="post">
+          <input type="hidden" name="next" value="{{ url_for('login') }}">
+          <button type="submit" class="btn">切换账号</button>
+        </form>
+      </div>
+
+      {% if is_admin %}
+        <div class="account-item">
+          <div class="ai-info">
+            <h3>退出管理员模式</h3>
+            <p>当前处于管理员模式，底部导航显示「审核」。</p>
+          </div>
+          <form action="{{ url_for('admin_exit') }}" method="post">
+            <button type="submit" class="btn btn-ghost">退出管理员</button>
+          </form>
+        </div>
+      {% else %}
+        <div class="account-item">
+          <div class="ai-info">
+            <h3>管理员登录</h3>
+            <p>输入管理员密码进入管理员模式。</p>
+          </div>
+        </div>
+        <form action="{{ url_for('admin_switch') }}" method="post" class="admin-login-form">
+          <input type="password" name="password" placeholder="管理员密码" required>
+          <button type="submit" class="btn btn-primary">进入管理员模式</button>
+        </form>
+      {% endif %}
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>非标准答案 · 献给所有没有被标准定义的可能</p>
+    </div>
+  </footer>
+</body>
+</html>

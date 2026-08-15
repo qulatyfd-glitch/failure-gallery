@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>发布活动 · 非标准答案</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <h1 class="logo"><a href="{{ url_for('index') }}">非标准答案</a></h1>
+      <p class="tagline">发布新活动（仅管理员）</p>
+      <nav class="main-nav">
+        <a href="{{ url_for('activities') }}" class="back-btn">← 返回</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container narrow">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flash-box">
+          {% for m in messages %}<p>{{ m }}</p>{% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" enctype="multipart/form-data" class="upload-form" id="activity-form">
+      <div class="form-group">
+        <label for="title">活动标题 *</label>
+        <input type="text" id="title" name="title" required placeholder="例如：下一期展览主题征集">
+      </div>
+      <div class="form-group">
+        <label for="content">活动内容 *</label>
+        <textarea id="content" name="content" rows="5" required
+                  placeholder="写清楚活动内容、主题方向、参与方式…"></textarea>
+      </div>
+      <div class="form-group">
+        <label for="image">活动配图（可选）</label>
+        <input type="file" id="image" name="image" accept=".png,.jpg,.jpeg,.gif,.webp">
+      </div>
+      <div class="form-group">
+        <label for="tag">活动 Tag（可选，用于标识投稿作品）</label>
+        <input type="text" id="tag" name="tag" placeholder="例如：错题世界">
+      </div>
+      <div class="form-group">
+        <label>
+          <input type="checkbox" name="is_vote" id="is_vote" onchange="toggleOptions()">
+          设为「主题投票帖」（用户投票决定下一期展览主题）
+        </label>
+      </div>
+
+      <div class="form-group vote-options-input" id="vote-options-box" style="display:none;">
+        <label>投票选项 *（管理员填写，用户单选且可改投）</label>
+        <div id="option-list">
+          <div class="option-row">
+            <input type="text" name="option_0" class="option-input" placeholder="选项 1">
+          </div>
+          <div class="option-row">
+            <input type="text" name="option_1" class="option-input" placeholder="选项 2">
+          </div>
+          <div class="option-row">
+            <input type="text" name="option_2" class="option-input" placeholder="选项 3（可选）">
+          </div>
+          <div class="option-row">
+            <input type="text" name="option_3" class="option-input" placeholder="选项 4（可选）">
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-lg">发布</button>
+    </form>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>非标准答案 · 献给所有没有被标准定义的可能</p>
+    </div>
+  </footer>
+
+  <script>
+    function toggleOptions() {
+      const box = document.getElementById('vote-options-box');
+      box.style.display = document.getElementById('is_vote').checked ? '' : 'none';
+    }
+  </script>
+</body>
+</html>

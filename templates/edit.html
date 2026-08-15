@@ -1,0 +1,90 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>编辑作品 · 非标准答案</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <h1 class="logo"><a href="{{ url_for('index') }}">非标准答案</a></h1>
+      <p class="tagline">修改这件「失败」，它值得更完整的表达。</p>
+      <nav class="main-nav">
+        <a href="{{ url_for('index') }}" class="back-btn">← 返回</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container narrow">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flash-box">
+          {% for m in messages %}<p>{{ m }}</p>{% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" enctype="multipart/form-data" class="upload-form">
+      <div class="form-group">
+        <label for="title">作品标题 *</label>
+        <input type="text" id="title" name="title" required value="{{ art.title }}">
+      </div>
+
+      <div class="form-group">
+        <label for="story">失败背后的故事 / 作品说明 *</label>
+        <textarea id="story" name="story" rows="6" required>{{ art.story }}</textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="category">所属展厅 *</label>
+        <select id="category" name="category">
+          {% for key, (name, desc) in categories.items() %}
+            <option value="{{ key }}" {% if art.category == key %}selected{% endif %}>{{ name }} — {{ desc }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      {% if art.image_filename %}
+        <div class="form-group">
+          <label>当前图片</label>
+          <img src="{{ url_for('uploaded_file', filename=art.image_filename) }}" class="edit-preview" alt="">
+          <label class="agree-line">
+            <input type="checkbox" name="remove_image" value="1"> 移除这张图片（改为纯文字作品）
+          </label>
+        </div>
+      {% endif %}
+
+      <div class="form-group">
+        <label for="image">替换/新增图片（可选）</label>
+        <input type="file" id="image" name="image" accept=".png,.jpg,.jpeg,.gif,.webp">
+      </div>
+
+      <div class="form-group">
+        <label>
+          <input type="checkbox" name="anonymous" {% if art.is_anonymous %}checked{% endif %}>
+          匿名发布
+        </label>
+      </div>
+
+      <div class="form-group" id="author-field">
+        <label for="author">署名（可选）</label>
+        <input type="text" id="author" name="author" value="{{ art.author_name or '' }}">
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary btn-lg">保存修改</button>
+        <a href="{{ url_for('detail', artwork_id=art.id) }}" class="btn btn-ghost">取消</a>
+      </div>
+    </form>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>非标准答案 · 献给所有没有被标准定义的可能</p>
+    </div>
+  </footer>
+</body>
+</html>
+

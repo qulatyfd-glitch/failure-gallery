@@ -1,0 +1,37 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>关于我们 · 非标准答案</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <h1 class="logo"><a href="{{ url_for('index') }}">非标准答案</a></h1>
+      <p class="tagline">关于我们</p>
+      <nav class="main-nav">
+        <a href="{{ url_for('index') }}" class="back-btn">← 返回</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container narrow">
+    <div class="about-card">
+      <img src="{{ url_for('static', filename='banner.svg') }}" alt="非标准答案 · 关于我们" class="about-img">
+      <h2 class="about-title">关于我们</h2>
+      <div class="about-text">
+        <p>当下教育困于分数与效率的单一标准，错题、走神时的幻想、达不到预期的创作，通通被贴上"失败"标签，我们独特的想象力也随之被埋没。有人算错题，算出时速百公里奔跑的人类，顺势构筑了专属漫威宇宙；有人课堂放空，独自搭建完整趣味野史空间。这些脱离标准答案的"失误"，藏着独一份的创造力。我们打造线上艺术展与分享网站，践行多元平等的优质教育理念：这里不看成绩、不评对错，只容纳所有鲜活想法。无论只是一闪而过的脑洞，还是搁置的小众创作，都能自由发布展示。校园总容易忽略标准之外的浪漫，但学习与教育本无边界、永不止步。我们想为学生开辟一方不受功利评判打扰的净土，分享藏在日常"失败"里的少年幻想，证明从没有唯一正确的成长模样，每一种偏离标准的创意，都拥有独一无二的价值。</p>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>非标准答案 · 献给所有没有被标准定义的可能</p>
+    </div>
+  </footer>
+</body>
+</html>
+
